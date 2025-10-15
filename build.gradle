@@ -1,19 +1,7 @@
-plugins {
-    id 'java'
-}
-
-group = 'org.example'
-version = '1.0-SNAPSHOT'
-
-repositories {
-    mavenCentral()
-}
-
+plugins { java }
+repositories { mavenCentral() }
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation("org.telegram:telegrambots:6.+")
+    implementation("com.google.code.gson:gson:2.+")          // для JSON
 }
-
-test {
-    useJUnitPlatform()
-}
+java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
