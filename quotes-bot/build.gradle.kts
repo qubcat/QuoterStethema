@@ -1,4 +1,4 @@
-plugins { java }
+plugins { "java" }
 repositories { mavenCentral() }
 dependencies {
     implementation("org.telegram:telegrambots:6.+")
