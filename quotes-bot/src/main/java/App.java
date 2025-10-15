@@ -13,4 +13,5 @@ public class App {
         api.registerBot(new MyQuoteBot(token, username));
         System.out.println("Quotes bot started as @" + username);
     }
+
 }
