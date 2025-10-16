@@ -10,6 +10,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("io.github.cdimascio:dotenv-java:3.0.0")
     implementation("org.slf4j:slf4j-simple:2.0.11")
+    implementation("org.xerial:sqlite-jdbc:3.46.0.0") // ← SQLite
 }
 
 application {
