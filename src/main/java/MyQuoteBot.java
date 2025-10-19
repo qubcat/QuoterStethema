@@ -59,14 +59,12 @@ public class MyQuoteBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update u) {
-        // 1) Учёт пользователя (message или callback)
-        User from = null;
+        // 1) Если пользователь отправил контакт — сохраняем номер и выходим
         if (u.hasMessage() && u.getMessage().getFrom() != null) {
-            from = u.getMessage().getFrom();
+            User from = u.getMessage().getFrom();
+            repo.upsertHit(from.getId(), from.getUserName(), from.getFirstName(), from.getLastName());
         } else if (u.hasCallbackQuery()) {
-            from = u.getCallbackQuery().getFrom();
-        }
-        if (from != null) {
+            User from = u.getCallbackQuery().getFrom();
             repo.upsertHit(from.getId(), from.getUserName(), from.getFirstName(), from.getLastName());
         }
 
@@ -76,16 +74,17 @@ public class MyQuoteBot extends TelegramLongPollingBot {
         String text = u.getMessage().getText().trim();
 
         if (text.equals("/start")) {
+            // Покажем приветствие
             reply(chatId, """
-                    Привет! Я присылаю вдохновляющие цитаты.
-                    Команды:
-                    • /quote — случайная цитата
-                    • /quote <тема> — поиск по слову (напр.: /quote путь)
-                    • /help — справка
-                    • /me — инфо о тебе
-                    """);
+        Привет! Я присылаю вдохновляющие цитаты.
+        Чтобы я мог записать твой номер — нажми кнопку ниже 👇
+        """);
+
+            // Покажем кнопку "📱 Отправить номер"
+            BotUtils.sendContactRequest(this, chatId);
             return;
         }
+
 
         if (text.equals("/help")) {
             reply(chatId, """
@@ -100,31 +99,18 @@ public class MyQuoteBot extends TelegramLongPollingBot {
         }
 
         if (text.equals("/me")) {
-            var s = repo.get(from.getId());
+            long userId = u.getMessage().getFrom().getId();
+            var s = repo.get(userId);
             String out = (s == null)
                     ? "Пока данных мало."
-                    : String.format("Ты: %s\nid: %d\nЗапросов: %d",
-                    s.displayName(), s.userId, s.hits);
+                    : String.format("Ты: %s\nid: %d\nТелефон: %s\nЗапросов: %d",
+                    s.displayName(), s.userId, (s.phone==null? "—" : s.phone), s.hits);
             reply(chatId, out);
             return;
         }
 
-        if (text.equals("/stats")) {
-            // 🔒 доступ только администратору
-            if (from == null || from.getId() != ADMIN_ID) {
-                reply(chatId, "Недостаточно прав.");
-                return;
-            }
-            int total = repo.countUsers();
-            var top = repo.topByHits(5);
-            StringBuilder sb = new StringBuilder("Пользователей: ").append(total).append("\nТоп активных:\n");
-            for (int i = 0; i < top.size(); i++) {
-                var s = top.get(i);
-                sb.append(i + 1).append(") ").append(s.displayName()).append(" — ").append(s.hits).append("\n");
-            }
-            reply(chatId, sb.toString());
-            return;
-        }
+
+
 
         if (text.startsWith("/quote")) {
             String query = text.replaceFirst("^/quote\\s*", "").trim();
@@ -141,7 +127,11 @@ public class MyQuoteBot extends TelegramLongPollingBot {
             return;
         }
 
-        // Мягкий ответ на неизвестные команды
+
+        if (text.equals("/phone")) {
+            BotUtils.sendContactRequest(this, chatId);
+            return;
+        }
         if (text.startsWith("/")) {
             reply(chatId, "Не знаю такой команды. Открой /help — там список доступных.");
         }
